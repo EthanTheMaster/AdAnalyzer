@@ -1,0 +1,89 @@
+<head>
+    <style> body { margin: 0; } </style>
+  
+    <script src="force-graph.min.js"></script>
+  </head>
+  
+  <body>
+    <div id="graph"></div>
+  
+    <script>
+        // Load graph data into this variable
+        const data = JSON.parse('<JSON_GRAPH_DATA>');
+        
+        var root = prompt("Start by exploring a word:");
+        while (data[root] == null) {
+            root = prompt("Sorry that word was not used. Try again with a different word or by typing the 'base' word (eg. ran => run).")
+        }
+
+        var expandedNodes = new Set();
+        expandedNodes.add(root);
+
+        const getVisibleTree = () => {
+            var openSet = [root];
+
+            visibleNodes = new Set();
+            visibleLinks = new Set();
+            while (openSet.length > 0) {
+                var current = openSet.pop();
+                
+                visibleNodes.add(current);
+                data[current].forEach(neighbor => {
+                    if (!visibleNodes.has(neighbor)) {
+                        if (expandedNodes.has(neighbor)) {
+                            openSet.push(neighbor);
+                        } else {
+                            visibleNodes.add(neighbor);
+                        }
+                    }
+                    visibleLinks.add({source: current, target: neighbor});
+                    visibleLinks.add({source: neighbor, target: current});
+                });
+            }
+
+            // Take intersection of closed set and expanded nodes ... to prune off some expanded nodes
+            var newExpandedNodes = new Set();
+            expandedNodes.forEach(elem => {
+                if (visibleNodes.has(elem)) {
+                    newExpandedNodes.add(elem);
+                }
+            });
+            expandedNodes = newExpandedNodes;
+            return {nodes: Array.from(visibleNodes).map(function (elem) { return {id: elem} }), links: Array.from(visibleLinks)};            
+        }
+
+        var graph = getVisibleTree();
+        const elem = document.getElementById('graph');
+        const Graph = ForceGraph()(elem)
+            .graphData(graph)
+            .nodeId('id')
+            .nodeAutoColorBy('group')
+            .onNodeClick(node => {
+                console.log(node.id + "");
+                if (expandedNodes.has(node.id)) {
+                    expandedNodes.delete(node.id);
+                } else {
+                    expandedNodes.add(node.id);
+                }
+                const newGraph = getVisibleTree();
+
+                // Take the intersection of the visible nodes and the expanded nodes
+                Graph.graphData(newGraph);
+            })
+            .nodeCanvasObject((node, ctx, globalScale) => {
+            const label = node.id;
+            const fontSize = 16/globalScale;
+            ctx.font = `${fontSize}px Sans-Serif`;
+            const textWidth = ctx.measureText(label).width;
+            const bckgDimensions = [textWidth, fontSize].map(n => n + fontSize * 0.2); // some padding
+
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
+            ctx.fillRect(node.x - bckgDimensions[0] / 2, node.y - bckgDimensions[1] / 2, ...bckgDimensions);
+
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillStyle = node.color;
+            ctx.fillText(label, node.x, node.y);
+            });
+    </script>
+  </body>

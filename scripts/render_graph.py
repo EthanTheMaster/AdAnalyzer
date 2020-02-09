@@ -1,7 +1,9 @@
+import json
+
 import networkx as nx
 import matplotlib.pyplot as plt
 
-def render(graph, words, max_depth=2):
+def render_networkx(graph, words, max_depth=2):
     G = nx.Graph()
     print("Adding nodes...")
     open_list = list(zip(words, [0] * len(words)))
@@ -27,3 +29,17 @@ def render(graph, words, max_depth=2):
     nx.draw_networkx_labels(G, pos)
     nx.draw_networkx_nodes(G, pos)
     plt.show()
+
+
+def gen_json(graph):
+    edges = {}
+    for key in graph:
+        edges[key] = [target for target in graph[key].edges]
+    return json.dumps(edges)
+
+def render_html(graph, rendered_name):
+    data = gen_json(graph)
+    with open("scripts/html_render/render_template.html", "r") as file:
+        rendered_content = file.read().replace("<JSON_GRAPH_DATA>", data)
+        with open("scripts/html_render/" + rendered_name, "w") as rendered_file:
+            rendered_file.write(rendered_content)

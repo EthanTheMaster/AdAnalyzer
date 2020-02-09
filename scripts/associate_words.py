@@ -1,7 +1,8 @@
 import spacy
-from render_graph import render;
+from render_graph import render_html;
 from spacy import displacy
 from spacy.tokens import Doc
+import json
 
 class AssociationNode:
     def __init__(self, word):
@@ -227,9 +228,11 @@ def gen_association_graph(docs):
 print("Loading Lang Model...")
 nlp = spacy.load("en_core_web_md")
 
-graph = gen_association_graph(nlp.pipe(open("/home/ethanlam/Desktop/LearnProgramming/AdAnalyzer/StateOfUnion")))
+graph = gen_association_graph(nlp.pipe(json.load(open("data/trump_ad_stats_merged.json"))))
+
+render_html(graph, "trump_ads.html")
 # graph = gen_association_graph(nlp.pipe(text_dataset))
-for node in graph:
-    print(node + " : " + str(graph[node].edges))
-print("Rendering Graph...")
-render(graph, ["immigrant"], max_depth=3)
+# for node in graph:
+#     print(node + " : " + str(graph[node].edges))
+# print("Rendering Graph...")
+# render(graph, ["freedom"], max_depth=1)
