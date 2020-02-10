@@ -1,15 +1,45 @@
 <head>
-    <style> body { margin: 0; } </style>
+    <style> 
+        body { 
+            margin: 0; 
+            height: 100%;
+        }
+        #graph canvas {
+            float: left;
+            width: 75%;
+            position: fixed;
+        }
+        #docs {
+            position: fixed;
+            float: left;
+            width: 25%;
+            height:100%;
+            background-color: #eeeeee;
+            overflow-y: scroll;
+        }
+        #doc_data li {
+            margin-top: 5%;
+            margin-bottom: 5%;
+            font-family: Arial, Helvetica, sans-serif;
+            font-size: large;
+        }
+    </style>
   
     <script src="force-graph.min.js"></script>
   </head>
   
   <body>
     <div id="graph"></div>
+    <div id="docs">
+        <ul id="doc_data">
+            
+        </ul>
+    </div>
   
     <script>
         // Load graph data into this variable
         const data = JSON.parse('<JSON_GRAPH_DATA>');
+        const docs = <JSON_DOCS_DATA>;
         
         var root = prompt("Start by exploring a word:");
         while (data[root] == null) {
@@ -28,7 +58,8 @@
                 var current = openSet.pop();
                 
                 visibleNodes.add(current);
-                data[current].forEach(neighbor => {
+                data[current].forEach(neighborData => {
+                    neighbor = neighborData["word"];
                     if (!visibleNodes.has(neighbor)) {
                         if (expandedNodes.has(neighbor)) {
                             openSet.push(neighbor);
@@ -69,6 +100,23 @@
 
                 // Take the intersection of the visible nodes and the expanded nodes
                 Graph.graphData(newGraph);
+            })
+            .onLinkClick(link => {
+                const source = link.source.id;
+                const target = link.target.id;
+                data[source].forEach(neighborData => {
+                    if (neighborData["word"] == target) {
+                        const doc_ids = neighborData["docs"];
+                        const list_element = document.getElementById("doc_data");
+                        list_element.innerHTML = "";
+                        doc_ids.forEach(id => {
+                            var li = document.createElement("li");
+                            li.appendChild(document.createTextNode(docs[id]));
+                            console.log(id)
+                            list_element.appendChild(li);
+                        });
+                    }
+                });
             })
             .nodeCanvasObject((node, ctx, globalScale) => {
                 const label = node.id;

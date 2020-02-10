@@ -34,12 +34,13 @@ def render_networkx(graph, words, max_depth=2):
 def gen_json(graph):
     edges = {}
     for key in graph:
-        edges[key] = [target for target in graph[key].edges]
+        edges[key] = [{"word":target, "docs":[idx for idx in graph[key].edges[target]]} for target in graph[key].edges]
     return json.dumps(edges)
 
-def render_html(graph, rendered_name):
+def render_html(docs_data, graph, rendered_name):
+    docs_json = json.dumps(docs_data)
     data = gen_json(graph)
     with open("scripts/html_render/render_template.html", "r") as file:
-        rendered_content = file.read().replace("<JSON_GRAPH_DATA>", data)
+        rendered_content = file.read().replace("<JSON_GRAPH_DATA>", data).replace("<JSON_DOCS_DATA>", docs_json)
         with open("scripts/html_render/" + rendered_name, "w") as rendered_file:
             rendered_file.write(rendered_content)

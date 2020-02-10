@@ -219,18 +219,20 @@ def add_edges(graph, token, doc_idx):
 def gen_association_graph(docs):
     # Maps strings (words) to node
     graph = {}
+    docs_data = []
     for doc_idx, doc in enumerate(docs):
+        docs_data.append(doc.text)
         for token in doc:
             add_edges(graph, token, doc_idx)
 
-    return graph
+    return (docs_data, graph)
 
 print("Loading Lang Model...")
 nlp = spacy.load("en_core_web_md")
 
-graph = gen_association_graph(nlp.pipe(json.load(open("data/trump_ad_stats_merged.json"))))
+docs_data, graph = gen_association_graph(nlp.pipe(json.load(open("data/trump_ad_stats_merged.json"))))
 
-render_html(graph, "trump_ads.html")
+render_html(docs_data, graph, "trump_ads.html")
 # graph = gen_association_graph(nlp.pipe(text_dataset))
 # for node in graph:
 #     print(node + " : " + str(graph[node].edges))
