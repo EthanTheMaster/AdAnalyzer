@@ -7,6 +7,7 @@
         #graph canvas {
             float: left;
             width: 75%;
+            height:100%;
             position: fixed;
         }
         #docs {
@@ -22,6 +23,11 @@
             margin-bottom: 5%;
             font-family: Arial, Helvetica, sans-serif;
             font-size: large;
+            animation: fadein 1.5s;
+        }
+        @keyframes fadein {
+            from { opacity: 0; }
+            to { opacity: 1; }
         }
     </style>
   
@@ -32,18 +38,20 @@
     <div id="graph"></div>
     <div id="docs">
         <ul id="doc_data">
-            
+            <li>Click on words to expand them and to explore other related words.</li>
+            <li>Click on a link connecting two words to bring up the ads that contain these two words in context. Ads will appear in this box.</li>
+            <li>Refresh the page if you would like to look up another word.</li>
         </ul>
     </div>
   
     <script>
         // Load graph data into this variable
         const data = JSON.parse(String.raw`<JSON_GRAPH_DATA>`);
-        const docs = <JSON_DOCS_DATA>;
+        const docs = `<JSON_DOCS_DATA>`;
         
-        var root = prompt("Start by exploring a word:");
+        var root = prompt("Start by exploring a word:").toLowerCase();
         while (data[root] == null) {
-            root = prompt("Sorry that word was not used. Try again with a different word or by typing the 'base' word (eg. ran => run).")
+            root = prompt("Sorry that word was not used. Try again with a different word or by typing the 'base' word (eg. ran => run).").toLowerCase();
         }
 
         var expandedNodes = new Set();
@@ -83,12 +91,32 @@
             return {nodes: Array.from(visibleNodes).map(function (elem) { return {id: elem, expanded: expandedNodes.has(elem)} }), links: Array.from(visibleLinks)};            
         }
 
+        var hoveredNode = null;
+        var hoveredLink = null;
         var graph = getVisibleTree();
         const elem = document.getElementById('graph');
         const Graph = ForceGraph()(elem)
             .graphData(graph)
             .nodeId('id')
             .nodeAutoColorBy('group')
+            .onNodeHover(node => {
+                if (node) {
+                    document.body.style.cursor = "pointer";
+                } else {
+                    document.body.style.cursor = "default"
+                }
+                hoveredNode = node ? node : null;
+            })
+            .onLinkHover(link => {
+                if (link) {
+                    document.body.style.cursor = "pointer";
+                } else {
+                    document.body.style.cursor = "default"
+                }
+                hoveredLink = link ? link : null;
+            })
+            .linkWidth(link => (hoveredLink != null && link.source == hoveredLink.source && link.target == hoveredLink.target) ? 7 : 2)
+            .nodeRelSize(8)
             .onNodeClick(node => {
                 console.log(node.id + "");
                 if (expandedNodes.has(node.id)) {
@@ -98,7 +126,6 @@
                 }
                 const newGraph = getVisibleTree();
 
-                // Take the intersection of the visible nodes and the expanded nodes
                 Graph.graphData(newGraph);
             })
             .onLinkClick(link => {
@@ -126,6 +153,10 @@
                 const bckgDimensions = [textWidth, fontSize].map(n => n + fontSize * 0.2); // some padding
 
                 ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
+                // Make rectangle change colors when node is hovered over
+                if (hoveredNode != null && hoveredNode.id == node.id) {
+                    ctx.fillStyle = "#bdd4e7cc";
+                }
                 ctx.fillRect(node.x - bckgDimensions[0] / 2, node.y - bckgDimensions[1] / 2, ...bckgDimensions);
 
                 ctx.textAlign = 'center';
