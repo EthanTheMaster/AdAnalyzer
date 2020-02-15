@@ -7,7 +7,8 @@ use std::fmt::{Formatter, Error};
 use std::collections::HashMap;
 use std::str::FromStr;
 use std::f64;
-use std::fs::File;
+use std::fs::{File, DirBuilder};
+use std::path::PathBuf;
 use std::io::{Read, Write};
 
 pub enum AdStatus {
@@ -261,7 +262,11 @@ pub fn merge_results(path1: &str, path2: &str, target_path: &str) -> std::io::Re
         }
     }
 
-    let mut output = File::create(target_path)?;
+    let target_path = PathBuf::from(target_path);
+    // Create parent directory if it does not exist
+    DirBuilder::new().recursive(true).create(target_path.parent().unwrap())?;
+
+    let mut output = File::create(target_path.as_path())?;
     output.write_all(serde_json::to_string(&res).unwrap().as_bytes())?;
 
     Ok(())
