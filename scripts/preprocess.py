@@ -1,8 +1,9 @@
 import spacy
 import json
+import argparse
 from spacy.tokens import Doc, DocBin
 
-from similarity import generate_models, load_models
+from similarity import generate_models
 
 def preprocess_filter(token):
     if token.is_punct:
@@ -29,19 +30,30 @@ def preprocess(doc):
             for subword in token_split:
                 normalized_tokens.append(subword)
     return list(normalized_tokens)
-    
 
-DATASET_LOCATION = "data/bloomberg_ad_stats.json"
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description="Reads json file created by the ad collector, preprocesses the ads, and generate NLP models")
+    parser.add_argument("DATA_PATH", help="Path to json file that ad collector created", nargs=1)
+    parser.add_argument("MODEL_DIR", help="Directory where NLP models will be stored", nargs=1)
+    parser.add_argument("--num_topics", help="Number of topics that the LSI model should look for", default=15, type=int)
+    parser.add_argument("--doc2vec_epochs", help="Number of epochs to train doc2vec model", default=40, type=int)
+    parser.add_argument("--doc2vec_workers", help="Number of epochs to train doc2vec model", default=1, type=int)
+    args = parser.parse_args()
 
-# Load Language Model
-nlp = spacy.load("en_core_web_md", disable=["tagger", "parser"])
-merge_entity = nlp.create_pipe("merge_entities")
-nlp.add_pipe(merge_entity)
+    DATASET_LOCATION = args.DATA_PATH[0]
+    MODEL_SAVE_LOCATION = args.MODEL_DIR[0]
+    num_topics = args.num_topics
+    doc2vec_epochs = args.doc2vec_epochs
+    doc2vec_workers = args.doc2vec_workers
+    # Load Language Model
+    nlp = spacy.load("en_core_web_md", disable=["tagger", "parser"])
+    merge_entity = nlp.create_pipe("merge_entities")
+    nlp.add_pipe(merge_entity)
 
-with open(DATASET_LOCATION) as dataset:
-    raw_corpus = []
-    processed_corpus = []
-    for idx, doc in enumerate(nlp.pipe(json.load(dataset))):
-        raw_corpus.append(doc.text)
-        processed_corpus.append(preprocess(doc))
-    generate_models(raw_corpus, processed_corpus, "models", 15)
+    with open(DATASET_LOCATION) as dataset:
+        raw_corpus = []
+        processed_corpus = []
+        for idx, doc in enumerate(nlp.pipe(json.load(dataset))):
+            raw_corpus.append(doc.text)
+            processed_corpus.append(preprocess(doc))
+        generate_models(raw_corpus, processed_corpus, MODEL_SAVE_LOCATION, num_topics, doc2vec_epochs, doc2vec_workers)
