@@ -3,29 +3,19 @@ extern crate reqwest;
 extern crate serde_json;
 extern crate serde;
 extern crate clap;
+extern crate actix_web;
+extern crate actix_files;
+extern crate askama;
 
 mod collector;
+mod web_server;
 
-use collector::{Collector, AdStatus, AdMetric, merge_results};
+use collector::{Collector, AdStatus, merge_results, save_results};
+use web_server::launch_web_server;
 
 use chrono::{DateTime, NaiveDateTime, Utc, NaiveDate, NaiveTime};
 
 use clap::{Arg, App, SubCommand, ArgMatches};
-
-use std::fs::{File, DirBuilder};
-use std::path::PathBuf;
-use std::io::Write;
-use std::collections::HashMap;
-
-fn save_results(res: &HashMap<String, AdMetric>, path_dir: &str) -> std::io::Result<()> {
-    // Create directory if it does not exist
-    DirBuilder::new().recursive(true).create(path_dir)?;
-    let data_location = PathBuf::from(path_dir).join("ad_data.json");
-
-    let mut file = File::create(data_location.as_path())?;
-    file.write_all(serde_json::to_string(res).unwrap().as_bytes())?;
-    Ok(())
-}
 
 async fn parse_collect_subcommand(matches: &ArgMatches<'_>) -> Result<(), String> {
     // Unwrap all arguments that are either required or have some default value
@@ -93,7 +83,8 @@ async fn parse_collect_subcommand(matches: &ArgMatches<'_>) -> Result<(), String
     return Ok(());
 }
 
-#[tokio::main]
+//#[tokio::main]
+#[actix_rt::main]
 async fn main() -> Result<(), String> {
     let matches = App::new("Collects ads from Facebook's Ad Library API and runs web interface to do analysis.")
                         .subcommand(SubCommand::with_name("collect")
@@ -202,17 +193,22 @@ async fn main() -> Result<(), String> {
                                 .takes_value(true)
                             )
                         )
+                        .subcommand(SubCommand::with_name("launch")
+                            .about("Launches web server to explore data")
+                        )
         .get_matches();
 
     if let Some(matches) = matches.subcommand_matches("collect") {
         parse_collect_subcommand(matches).await?;
-    }else if let Some(matches) = matches.subcommand_matches("merge") {
+    } else if let Some(matches) = matches.subcommand_matches("merge") {
         // Merge two resulting files together ... can be used to consolidate data collection done over many days
         merge_results(
             matches.value_of("path1").unwrap(),
             matches.value_of("path2").unwrap(),
             matches.value_of("target").unwrap()
         ).map_err(|_| "Failed to merge files")?;
+    } else if let Some(matches) = matches.subcommand_matches("launch") {
+        launch_web_server().await?;
     }
 
     return Ok(());

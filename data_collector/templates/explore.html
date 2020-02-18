@@ -1,0 +1,183 @@
+<head>
+    <style> 
+        body { 
+            margin: 0; 
+            height: 100%;
+        }
+        #graph canvas {
+            float: left;
+            width: 75%;
+            height:100%;
+            position: fixed;
+        }
+        #docs {
+            position: fixed;
+            float: left;
+            width: 25%;
+            height:100%;
+            background-color: #eeeeee;
+            overflow-y: scroll;
+        }
+        #doc_data li {
+            margin-top: 5%;
+            margin-bottom: 5%;
+            font-family: Arial, Helvetica, sans-serif;
+            font-size: large;
+            animation: fadein 1.5s;
+        }
+        @keyframes fadein {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+    </style>
+  
+    <script src="/scripts/force-graph.min.js"></script>
+    <title>Graph Explorer</title>
+  </head>
+  
+  <body>
+    <div id="graph"></div>
+    <div id="docs">
+        <ul id="doc_data">
+            <li>Click on words to expand them and to explore other related words.</li>
+            <li>Click on a link connecting two words to bring up the ads that contain these two words in context. Ads will appear in this box.</li>
+            <li>Refresh the page if you would like to look up another word.</li>
+        </ul>
+    </div>
+  
+    <script>
+        function fetchJsonData(url) {
+            return fetch(url)
+                        .then(response => {
+                            if (!response.ok) {
+                                throw new Error(response.status);
+                            }
+                            return response.json()
+                        });
+        }
+
+        // Load graph data and document/corpus data
+        fetchJsonData("/explore/{{ id }}/graph")
+        .then(data => {
+            fetchJsonData("/explore/{{ id }}/corpus")
+            .then(corpus => {
+                docs = corpus["raw_corpus"];
+                var root = prompt("Start by exploring a word:").toLowerCase();
+                while (data[root] == null) {
+                    root = prompt("Sorry that word was not used. Try again with a different word or by typing the 'base' word (eg. ran => run).").toLowerCase();
+                }
+
+                var expandedNodes = new Set();
+                expandedNodes.add(root);
+
+                const getVisibleTree = () => {
+                    var openSet = [root];
+
+                    visibleNodes = new Set();
+                    visibleLinks = new Set();
+                    while (openSet.length > 0) {
+                        var current = openSet.pop();
+                        
+                        visibleNodes.add(current);
+                        data[current].forEach(neighborData => {
+                            neighbor = neighborData["word"];
+                            if (!visibleNodes.has(neighbor)) {
+                                if (expandedNodes.has(neighbor)) {
+                                    openSet.push(neighbor);
+                                } else {
+                                    visibleNodes.add(neighbor);
+                                }
+                            }
+                            visibleLinks.add({source: current, target: neighbor});
+                            visibleLinks.add({source: neighbor, target: current});
+                        });
+                    }
+
+                    // Take intersection of closed set and expanded nodes ... to prune off some expanded nodes
+                    var newExpandedNodes = new Set();
+                    expandedNodes.forEach(elem => {
+                        if (visibleNodes.has(elem)) {
+                            newExpandedNodes.add(elem);
+                        }
+                    });
+                    expandedNodes = newExpandedNodes;
+                    return {nodes: Array.from(visibleNodes).map(function (elem) { return {id: elem, expanded: expandedNodes.has(elem)} }), links: Array.from(visibleLinks)};            
+                }
+
+                var hoveredNode = null;
+                var hoveredLink = null;
+                var graph = getVisibleTree();
+                const elem = document.getElementById('graph');
+                const Graph = ForceGraph()(elem)
+                    .graphData(graph)
+                    .nodeId('id')
+                    .nodeAutoColorBy('group')
+                    .onNodeHover(node => {
+                        if (node) {
+                            document.body.style.cursor = "pointer";
+                        } else {
+                            document.body.style.cursor = "default";
+                        }
+                        hoveredNode = node ? node : null;
+                    })
+                    .onLinkHover(link => {
+                        if (link) {
+                            document.body.style.cursor = "pointer";
+                        } else {
+                            document.body.style.cursor = "default";
+                        }
+                        hoveredLink = link ? link : null;
+                    })
+                    .linkWidth(link => (hoveredLink != null && link.source == hoveredLink.source && link.target == hoveredLink.target) ? 7 : 2)
+                    .nodeRelSize(8)
+                    .onNodeClick(node => {
+                        console.log(node.id + "");
+                        if (expandedNodes.has(node.id)) {
+                            expandedNodes.delete(node.id);
+                        } else {
+                            expandedNodes.add(node.id);
+                        }
+                        const newGraph = getVisibleTree();
+
+                        Graph.graphData(newGraph);
+                    })
+                    .onLinkClick(link => {
+                        const source = link.source.id;
+                        const target = link.target.id;
+                        data[source].forEach(neighborData => {
+                            if (neighborData["word"] == target) {
+                                const doc_ids = neighborData["docs"];
+                                const list_element = document.getElementById("doc_data");
+                                list_element.innerHTML = "";
+                                doc_ids.forEach(id => {
+                                    var li = document.createElement("li");
+                                    li.appendChild(document.createTextNode(docs[id]));
+                                    console.log(id)
+                                    list_element.appendChild(li);
+                                });
+                            }
+                        });
+                    })
+                    .nodeCanvasObject((node, ctx, globalScale) => {
+                        const label = node.id;
+                        const fontSize = 16/globalScale;
+                        ctx.font = `${fontSize}px Sans-Serif`;
+                        const textWidth = ctx.measureText(label).width;
+                        const bckgDimensions = [textWidth, fontSize].map(n => n + fontSize * 0.2); // some padding
+
+                        ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
+                        // Make rectangle change colors when node is hovered over
+                        if (hoveredNode != null && hoveredNode.id == node.id) {
+                            ctx.fillStyle = "#bdd4e7cc";
+                        }
+                        ctx.fillRect(node.x - bckgDimensions[0] / 2, node.y - bckgDimensions[1] / 2, ...bckgDimensions);
+
+                        ctx.textAlign = 'center';
+                        ctx.textBaseline = 'middle';
+                        ctx.fillStyle = (node.expanded) ? "#235789" : "#020100";
+                        ctx.fillText(label, node.x, node.y);
+                    });
+            });            
+        });
+    </script>
+  </body>

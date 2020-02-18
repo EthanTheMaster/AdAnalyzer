@@ -271,3 +271,14 @@ pub fn merge_results(path1: &str, path2: &str, target_path: &str) -> std::io::Re
 
     Ok(())
 }
+
+// Saves results from Collector::collect() into json file in path_dir
+pub fn save_results(res: &HashMap<String, AdMetric>, path_dir: &str) -> std::io::Result<()> {
+    // Create directory if it does not exist
+    DirBuilder::new().recursive(true).create(path_dir)?;
+    let data_location = PathBuf::from(path_dir).join("ad_data.json");
+
+    let mut file = File::create(data_location.as_path())?;
+    file.write_all(serde_json::to_string(res).unwrap().as_bytes())?;
+    Ok(())
+}
