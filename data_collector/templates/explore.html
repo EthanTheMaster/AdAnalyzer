@@ -61,122 +61,125 @@
         .then(data => {
             fetchJsonData("/explore/{{ id }}/corpus")
             .then(corpus => {
-                docs = corpus["raw_corpus"];
-                var root = prompt("Start by exploring a word:").toLowerCase();
-                while (data[root] == null) {
-                    root = prompt("Sorry that word was not used. Try again with a different word or by typing the 'base' word (eg. ran => run).").toLowerCase();
-                }
-
-                var expandedNodes = new Set();
-                expandedNodes.add(root);
-
-                const getVisibleTree = () => {
-                    var openSet = [root];
-
-                    visibleNodes = new Set();
-                    visibleLinks = new Set();
-                    while (openSet.length > 0) {
-                        var current = openSet.pop();
-                        
-                        visibleNodes.add(current);
-                        data[current].forEach(neighborData => {
-                            neighbor = neighborData["word"];
-                            if (!visibleNodes.has(neighbor)) {
-                                if (expandedNodes.has(neighbor)) {
-                                    openSet.push(neighbor);
-                                } else {
-                                    visibleNodes.add(neighbor);
-                                }
-                            }
-                            visibleLinks.add({source: current, target: neighbor});
-                            visibleLinks.add({source: neighbor, target: current});
-                        });
+                fetchJsonData("/explore/{{ id }}/interesting_words/20")
+                .then(interesting_words => {
+                    docs = corpus["raw_corpus"];
+                    var root = prompt("Start by exploring a word. Here are some suggested words: " + interesting_words).toLowerCase();
+                    while (data[root] == null) {
+                        root = prompt("Sorry that word was not used. Try again with a different word or by typing the 'base' word (eg. ran => run). Here are some suggested words: " + interesting_words).toLowerCase();
                     }
 
-                    // Take intersection of closed set and expanded nodes ... to prune off some expanded nodes
-                    var newExpandedNodes = new Set();
-                    expandedNodes.forEach(elem => {
-                        if (visibleNodes.has(elem)) {
-                            newExpandedNodes.add(elem);
-                        }
-                    });
-                    expandedNodes = newExpandedNodes;
-                    return {nodes: Array.from(visibleNodes).map(function (elem) { return {id: elem, expanded: expandedNodes.has(elem)} }), links: Array.from(visibleLinks)};            
-                }
+                    var expandedNodes = new Set();
+                    expandedNodes.add(root);
 
-                var hoveredNode = null;
-                var hoveredLink = null;
-                var graph = getVisibleTree();
-                const elem = document.getElementById('graph');
-                const Graph = ForceGraph()(elem)
-                    .graphData(graph)
-                    .nodeId('id')
-                    .nodeAutoColorBy('group')
-                    .onNodeHover(node => {
-                        if (node) {
-                            document.body.style.cursor = "pointer";
-                        } else {
-                            document.body.style.cursor = "default";
-                        }
-                        hoveredNode = node ? node : null;
-                    })
-                    .onLinkHover(link => {
-                        if (link) {
-                            document.body.style.cursor = "pointer";
-                        } else {
-                            document.body.style.cursor = "default";
-                        }
-                        hoveredLink = link ? link : null;
-                    })
-                    .linkWidth(link => (hoveredLink != null && link.source == hoveredLink.source && link.target == hoveredLink.target) ? 7 : 2)
-                    .nodeRelSize(8)
-                    .onNodeClick(node => {
-                        console.log(node.id + "");
-                        if (expandedNodes.has(node.id)) {
-                            expandedNodes.delete(node.id);
-                        } else {
-                            expandedNodes.add(node.id);
-                        }
-                        const newGraph = getVisibleTree();
+                    const getVisibleTree = () => {
+                        var openSet = [root];
 
-                        Graph.graphData(newGraph);
-                    })
-                    .onLinkClick(link => {
-                        const source = link.source.id;
-                        const target = link.target.id;
-                        data[source].forEach(neighborData => {
-                            if (neighborData["word"] == target) {
-                                const doc_ids = neighborData["docs"];
-                                const list_element = document.getElementById("doc_data");
-                                list_element.innerHTML = "";
-                                doc_ids.forEach(id => {
-                                    var li = document.createElement("li");
-                                    li.appendChild(document.createTextNode(docs[id]));
-                                    console.log(id)
-                                    list_element.appendChild(li);
-                                });
+                        visibleNodes = new Set();
+                        visibleLinks = new Set();
+                        while (openSet.length > 0) {
+                            var current = openSet.pop();
+                            
+                            visibleNodes.add(current);
+                            data[current].forEach(neighborData => {
+                                neighbor = neighborData["word"];
+                                if (!visibleNodes.has(neighbor)) {
+                                    if (expandedNodes.has(neighbor)) {
+                                        openSet.push(neighbor);
+                                    } else {
+                                        visibleNodes.add(neighbor);
+                                    }
+                                }
+                                visibleLinks.add({source: current, target: neighbor});
+                                visibleLinks.add({source: neighbor, target: current});
+                            });
+                        }
+
+                        // Take intersection of closed set and expanded nodes ... to prune off some expanded nodes
+                        var newExpandedNodes = new Set();
+                        expandedNodes.forEach(elem => {
+                            if (visibleNodes.has(elem)) {
+                                newExpandedNodes.add(elem);
                             }
                         });
-                    })
-                    .nodeCanvasObject((node, ctx, globalScale) => {
-                        const label = node.id;
-                        const fontSize = 16/globalScale;
-                        ctx.font = `${fontSize}px Sans-Serif`;
-                        const textWidth = ctx.measureText(label).width;
-                        const bckgDimensions = [textWidth, fontSize].map(n => n + fontSize * 0.2); // some padding
+                        expandedNodes = newExpandedNodes;
+                        return {nodes: Array.from(visibleNodes).map(function (elem) { return {id: elem, expanded: expandedNodes.has(elem)} }), links: Array.from(visibleLinks)};            
+                    }
 
-                        ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
-                        // Make rectangle change colors when node is hovered over
-                        if (hoveredNode != null && hoveredNode.id == node.id) {
-                            ctx.fillStyle = "#bdd4e7cc";
-                        }
-                        ctx.fillRect(node.x - bckgDimensions[0] / 2, node.y - bckgDimensions[1] / 2, ...bckgDimensions);
+                    var hoveredNode = null;
+                    var hoveredLink = null;
+                    var graph = getVisibleTree();
+                    const elem = document.getElementById('graph');
+                    const Graph = ForceGraph()(elem)
+                        .graphData(graph)
+                        .nodeId('id')
+                        .nodeAutoColorBy('group')
+                        .onNodeHover(node => {
+                            if (node) {
+                                document.body.style.cursor = "pointer";
+                            } else {
+                                document.body.style.cursor = "default";
+                            }
+                            hoveredNode = node ? node : null;
+                        })
+                        .onLinkHover(link => {
+                            if (link) {
+                                document.body.style.cursor = "pointer";
+                            } else {
+                                document.body.style.cursor = "default";
+                            }
+                            hoveredLink = link ? link : null;
+                        })
+                        .linkWidth(link => (hoveredLink != null && link.source == hoveredLink.source && link.target == hoveredLink.target) ? 7 : 2)
+                        .nodeRelSize(8)
+                        .onNodeClick(node => {
+                            console.log(node.id + "");
+                            if (expandedNodes.has(node.id)) {
+                                expandedNodes.delete(node.id);
+                            } else {
+                                expandedNodes.add(node.id);
+                            }
+                            const newGraph = getVisibleTree();
 
-                        ctx.textAlign = 'center';
-                        ctx.textBaseline = 'middle';
-                        ctx.fillStyle = (node.expanded) ? "#235789" : "#020100";
-                        ctx.fillText(label, node.x, node.y);
-                    });
+                            Graph.graphData(newGraph);
+                        })
+                        .onLinkClick(link => {
+                            const source = link.source.id;
+                            const target = link.target.id;
+                            data[source].forEach(neighborData => {
+                                if (neighborData["word"] == target) {
+                                    const doc_ids = neighborData["docs"];
+                                    const list_element = document.getElementById("doc_data");
+                                    list_element.innerHTML = "";
+                                    doc_ids.forEach(id => {
+                                        var li = document.createElement("li");
+                                        li.appendChild(document.createTextNode(docs[id]));
+                                        console.log(id)
+                                        list_element.appendChild(li);
+                                    });
+                                }
+                            });
+                        })
+                        .nodeCanvasObject((node, ctx, globalScale) => {
+                            const label = node.id;
+                            const fontSize = 16/globalScale;
+                            ctx.font = `${fontSize}px Sans-Serif`;
+                            const textWidth = ctx.measureText(label).width;
+                            const bckgDimensions = [textWidth, fontSize].map(n => n + fontSize * 0.2); // some padding
+
+                            ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
+                            // Make rectangle change colors when node is hovered over
+                            if (hoveredNode != null && hoveredNode.id == node.id) {
+                                ctx.fillStyle = "#bdd4e7cc";
+                            }
+                            ctx.fillRect(node.x - bckgDimensions[0] / 2, node.y - bckgDimensions[1] / 2, ...bckgDimensions);
+
+                            ctx.textAlign = 'center';
+                            ctx.textBaseline = 'middle';
+                            ctx.fillStyle = (node.expanded) ? "#235789" : "#020100";
+                            ctx.fillText(label, node.x, node.y);
+                        });
+                })
             });            
         });
     </script>
