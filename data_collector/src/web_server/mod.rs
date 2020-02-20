@@ -49,6 +49,7 @@ pub async fn launch_web_server() -> Result<(), String> {
             .route("/explore/{id}", web::get().to(explore))
             .route("/explore/{id}/graph", web::get().to(api::get_association_graph))
             .route("/explore/{id}/corpus", web::get().to(api::get_corpus))
+            .route("/explore/{id}/stats", web::get().to(api::get_stats))
             .route("/explore/{id}/interesting_words/{num_best}", web::get().to(api::get_interesting_words))
     })
     .bind("127.0.0.1:8080").map_err(|_| "Failed to bind")?

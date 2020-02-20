@@ -16,6 +16,9 @@ GLOBAL_STATE = {
     data: {},
     // All documents in the corpus with ith document having id i
     docs: [],
+    // Holds demographic stats for ads
+    ad_stats: {},
+
     interesting_words: [],
 
     // force-graph object
@@ -112,13 +115,11 @@ function renderGraph() {
             GLOBAL_STATE.data[source].forEach(neighborData => {
                 if (neighborData["word"] == target) {
                     const doc_ids = neighborData["docs"];
-                    const list_element = document.getElementById("doc_data");
-                    list_element.innerHTML = "";
+                    const list_element = $("#doc_data");
+                    list_element.html("");
                     doc_ids.forEach(id => {
-                        var li = document.createElement("li");
-                        li.appendChild(document.createTextNode(GLOBAL_STATE.docs[id]));
-                        console.log(id)
-                        list_element.appendChild(li);
+                        var doc_item = `<li class="ad_doc" id="doc_${id}">${GLOBAL_STATE.docs[id]}</li>`
+                        list_element.append(doc_item);
                     });
                 }
             });
@@ -146,25 +147,29 @@ function renderGraph() {
 }
 
 // Load graph data and document/corpus data ... ID is loaded when the HTML file is rendered
-fetchJsonData("/explore/"+ ID +"/graph")
+fetchJsonData(`/explore/${ID}/graph`)
 .then(data => {
-    fetchJsonData("/explore/"+ ID +"/corpus")
+    fetchJsonData(`/explore/${ID}/corpus`)
     .then(corpus => {
-        fetchJsonData("/explore/"+ ID +"/interesting_words/20")
-        .then(interesting_words => {
-            GLOBAL_STATE = {
-                ready: true,
-
-                data: data,
-                docs: corpus["raw_corpus"],
-                interesting_words: interesting_words,
-            
-                root: null,
-                expandedNodes: new Set(),
-            };
-            renderGraph();
-            $("#select_word_button").text("Explore word!");
-            $("#select_word_button").prop('disabled', false);
+        fetchJsonData(`/explore/${ID}/stats`)
+        .then(ad_stats => {
+            fetchJsonData(`/explore/${ID}/interesting_words/20`)
+            .then(interesting_words => {
+                GLOBAL_STATE = {
+                    ready: true,
+    
+                    data: data,
+                    docs: corpus["raw_corpus"],
+                    ad_stats: ad_stats,
+                    interesting_words: interesting_words,
+                
+                    root: null,
+                    expandedNodes: new Set(),
+                };
+                renderGraph();
+                $("#select_word_button").text("Explore word!");
+                $("#select_word_button").prop('disabled', false);
+            })
         })
     });            
 });

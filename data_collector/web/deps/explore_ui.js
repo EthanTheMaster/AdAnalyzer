@@ -45,12 +45,145 @@ $(document).ready(function() {
             for (var i = 0; i < GLOBAL_STATE.interesting_words.length; i++) {
                 const element = GLOBAL_STATE.interesting_words[i].toLowerCase().trim();
                 if (GLOBAL_STATE.data[element] != null) {
-                    console.log(element);
                     $("#suggested_words").append('<li class="list-group-item">'+ element +'</li>');
                 }
             }
         }
     });
+    // Create click event listener as ads are not loaded until later
+    $(document).on("click", ".ad_doc", function() {
+        const doc_id = parseInt($(this).attr('id').split("_")[1]);
+        // Convert doc_id to doc text and use that to lookup the stats
+        const doc_stats = GLOBAL_STATE.ad_stats[GLOBAL_STATE.docs[doc_id]];
+        const demographic = doc_stats["demographic_impression"];
+        const region = doc_stats["region_impression"];
+        console.log(doc_stats);
+        // Popup modal
+        if (current_modal != null) {
+            // Dismiss whatever modal is currently opened
+            hideModal();
+        }
+        $("#veil").addClass("darken_bg");
+        current_modal = $("#stats_modal")
+        $("#stats_modal").css("display", "block");
+        // Render demographic data
+        var demographic_ctx = document.getElementById("demographic_chart").getContext("2d");
+        
+        const demographic_labels = Object.keys(demographic).sort();
+        const demographic_data = Array.from(demographic_labels.map(label => {
+            return demographic[label];
+        }));
+
+        const female_color = "#F50057";
+        const male_color = "#2979FF";
+        const unknown_color = "#CCCCCC"
+        const demographic_colors = Array.from(demographic_labels.map(label => {
+            const gender = label.split("/")[0];
+            if (gender == "male") {
+                return male_color;
+            } else if (gender == "female") {
+                return female_color;
+            } else {
+                return unknown_color;
+            }
+        }));
+        var demographic_chart = new Chart(demographic_ctx, {
+            type: 'bar',
+            data: {
+                labels: demographic_labels,
+                datasets: [{
+                    data: demographic_data,
+                    backgroundColor: demographic_colors,
+                    borderWidth: 1,
+                }],
+            },
+            options: {
+                legend:{
+                    display:false
+                },
+                scales: {
+                    yAxes: [{
+                        ticks: {
+                            beginAtZero: false
+                        },
+                        scaleLabel: {
+                            display: true,
+                            labelString: "Estimated # of Impressions"
+                        }
+                    }],
+                    xAxes: [{
+                        scaleLabel: {
+                            display: true,
+                            labelString: "Demographic"
+                        }
+                    }]
+                }
+            }
+        });
+        // Get canvas to fill container div
+        $("#demographic_chart").css("width", '100%');
+        $("#demographic_chart").css("height", '100%');
+        $("#demographic_chart").width  = $("#demographic_chart").offsetWidth;
+        $("#demographic_chart").height = $("#demographic_chart").offsetHeight;
+        
+        // Render region data
+        var region_ctx = document.getElementById("us_choropleth").getContext("2d");
+
+        fetchJsonData('https://unpkg.com/us-atlas/states-10m.json').then((us) => {
+            const nation = ChartGeo.topojson.feature(us, us.objects.nation).features[0];
+            const states = ChartGeo.topojson.feature(us, us.objects.states).features;
+            
+            const region_labels = Object.keys(region);
+            const region_data = Array.from(region_labels.map(label => {
+                return {
+                    feature: states.find((d) => d.properties.name === label),
+                    value: (region[label][0] + region[label][1]) / 2.0
+                };
+            }));
+            var max = 1;
+            region_labels.forEach(label => {
+                value = (region[label][0] + region[label][1]) / 2.0;
+                if (value > max) {
+                    max = value;
+                }
+            })
+            console.log(Array.from(states.map((d) => d.properties.name)));
+            var us_choropleth = new Chart(region_ctx, {
+                type: 'choropleth',
+                data: {
+                    labels: region_labels,
+                    datasets: [{
+                        outline: nation,
+                        data: region_data,
+                        backgroundColor: (context) => {
+                            if (context.dataIndex == null) {
+                                return null;
+                            }
+                            const value = context.dataset.data[context.dataIndex];
+                            const percent = value.value/max;
+                            const color = new Color().rgb(255 - percent*255, 255 - percent*255, 255 - percent*255);                       
+                            return color.rgbString();
+                        },
+                        borderWidth: 1,
+                    }],
+                },
+                options: {
+                    legend:{
+                        display:false
+                    },
+                    scale: {
+                        projection: 'albersUsa'
+                    }
+                }
+            });
+            // Get canvas to fill container div
+            $("#us_choropleth").css("width", '100%');
+            $("#us_choropleth").css("height", '100%');
+            $("#us_choropleth").width  = $("#demographic_chart").offsetWidth;
+            $("#us_choropleth").height = $("#demographic_chart").offsetHeight;
+        });
+    });
+
     $("#veil").click(hideModal);
     $("#submit_word").click(submitWord);
     $("#input_word").keypress(function(e) {

@@ -27,6 +27,12 @@ pub async fn get_corpus(req: HttpRequest, info: web::Path<String>) -> impl Respo
     return_file(&req, format!("web/data/{}/models/corpus_data.json", id))
 }
 
+// API endpoint to stats of ads by returning json file generated during ad collection
+pub async fn get_stats(req: HttpRequest, info: web::Path<String>) -> impl Responder {
+    let id = &info;
+    return_file(&req, format!("web/data/{}/ad_data.json", id))
+}
+
 // API endpoint to find interesting words for a given model by executing python script
 fn interesting_words(id: &String, num_best: usize) -> impl Responder {
     // Find the directory with generate models ... get absolute path for python script

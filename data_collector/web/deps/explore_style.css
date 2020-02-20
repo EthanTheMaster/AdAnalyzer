@@ -2,7 +2,7 @@ body {
     margin: 0; 
     height: 100%;
 }
-canvas {
+#graph canvas {
     float: left;
     width: 75%;
     height:100%;
@@ -39,10 +39,27 @@ canvas {
     top: 50%;
     transform: translate(-50%, -50%);
 }
+#stats_modal {
+    display: none;
+    position: absolute;
+    background-color: #eeeeee;
+    width: 80%;
+    height: 80%;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    overflow-y: scroll;
+}
+
+
 #suggested_words {
     width: 100%;
     max-height: 200px;
     overflow: scroll;
+}
+.ad_doc:hover {
+    cursor: pointer;
+    text-decoration: underline;
 }
 @keyframes fadein {
     from { opacity: 0; }
