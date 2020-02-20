@@ -133,15 +133,19 @@ $(document).ready(function() {
             const nation = ChartGeo.topojson.feature(us, us.objects.nation).features[0];
             const states = ChartGeo.topojson.feature(us, us.objects.states).features;
             
-            const region_labels = Object.keys(region);
-            const region_data = Array.from(region_labels.map(label => {
+            const region_labels = Object.keys(region).map(label => {
+                const lower = region[label][0];
+                const upper = region[label][1];
+                return `${label} (Impressions: ${lower.toFixed()} - ${upper.toFixed()})`;
+            });
+            const region_data = Array.from(Object.keys(region).map(label => {
                 return {
                     feature: states.find((d) => d.properties.name === label),
                     value: (region[label][0] + region[label][1]) / 2.0
                 };
             }));
             var max = 1;
-            region_labels.forEach(label => {
+            Object.keys(region).forEach(label => {
                 value = (region[label][0] + region[label][1]) / 2.0;
                 if (value > max) {
                     max = value;
