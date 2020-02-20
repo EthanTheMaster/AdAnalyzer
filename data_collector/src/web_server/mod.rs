@@ -21,9 +21,9 @@ async fn index() -> impl Responder {
     HttpResponse::Ok().body("index page goes here...")
 }
 
-// Wrapper on return_file to get scripts
-async fn retrieve_script(req: HttpRequest, name: web::Path<String>) -> impl Responder {
-    return_file(&req, format!("web/scripts/{}", name))
+// Wrapper on return_file to get dependency
+async fn retrieve_dependencies(req: HttpRequest, name: web::Path<String>) -> impl Responder {
+    return_file(&req, format!("web/deps/{}", name))
 }
 
 #[derive(Template)]
@@ -44,7 +44,7 @@ pub async fn launch_web_server() -> Result<(), String> {
     HttpServer::new(|| {
         App::new()
             .route("/", web::get().to(index))
-            .route("/scripts/{file_name}", web::get().to(retrieve_script))
+            .route("/deps/{file_name}", web::get().to(retrieve_dependencies))
 
             .route("/explore/{id}", web::get().to(explore))
             .route("/explore/{id}/graph", web::get().to(api::get_association_graph))

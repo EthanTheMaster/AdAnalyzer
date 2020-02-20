@@ -1,186 +1,55 @@
-<head>
-    <style> 
-        body { 
-            margin: 0; 
-            height: 100%;
-        }
-        #graph canvas {
-            float: left;
-            width: 75%;
-            height:100%;
-            position: fixed;
-        }
-        #docs {
-            position: fixed;
-            float: left;
-            width: 25%;
-            height:100%;
-            background-color: #eeeeee;
-            overflow-y: scroll;
-        }
-        #doc_data li {
-            margin-top: 5%;
-            margin-bottom: 5%;
-            font-family: Arial, Helvetica, sans-serif;
-            font-size: large;
-            animation: fadein 1.5s;
-        }
-        @keyframes fadein {
-            from { opacity: 0; }
-            to { opacity: 1; }
-        }
-    </style>
-  
-    <script src="/scripts/force-graph.min.js"></script>
-    <title>Graph Explorer</title>
-  </head>
-  
-  <body>
-    <div id="graph"></div>
-    <div id="docs">
-        <ul id="doc_data">
-            <li>Click on words to expand them and to explore other related words.</li>
-            <li>Click on a link connecting two words to bring up the ads that contain these two words in context. Ads will appear in this box.</li>
-            <li>Refresh the page if you would like to look up another word.</li>
-        </ul>
-    </div>
-  
-    <script>
-        function fetchJsonData(url) {
-            return fetch(url)
-                        .then(response => {
-                            if (!response.ok) {
-                                throw new Error(response.status);
-                            }
-                            return response.json()
-                        });
-        }
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8">
+        <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css" integrity="sha384-Vkoo8x4CGsO3+Hhxv8T/Q5PaXtkKtu6ug5TOeNV6gBiFeWPGFN9MuhOf23Q9Ifjh" crossorigin="anonymous">
+        <script src="https://code.jquery.com/jquery-3.4.1.slim.min.js" integrity="sha384-J6qa4849blE2+poT4WnyKhv5vZF5SrPo0iEjwBvKU7imGFAV0wwj1yYfoRSJoZ+n" crossorigin="anonymous"></script>
+        <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.0/dist/umd/popper.min.js" integrity="sha384-Q6E9RHvbIyZFJoft+2mJbHaEWldlvI9IOYy5n3zV9zzTtmI3UksdQRVvoxMfooAo" crossorigin="anonymous"></script>
+        <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/js/bootstrap.min.js" integrity="sha384-wfSDF2E50Y2D1uUdj0O3uMBJnjuUD4Ih7YwaYd1iqfktj0Uod8GCExl3Og8ifwB6" crossorigin="anonymous"></script>
+        
+        <link rel="stylesheet" href="/deps/explore_style.css"></style>
+        <script src="/deps/force-graph.min.js"></script>
+        <!-- Set id so script knows where to find model data -->
+        <script>const ID = "{{ id }}"</script>
+        <script src="/deps/graph_ui.js"></script>
+        <script src="/deps/explore_ui.js"></script>
+        <title>Graph Explorer</title>
+    </head>
 
-        // Load graph data and document/corpus data
-        fetchJsonData("/explore/{{ id }}/graph")
-        .then(data => {
-            fetchJsonData("/explore/{{ id }}/corpus")
-            .then(corpus => {
-                fetchJsonData("/explore/{{ id }}/interesting_words/20")
-                .then(interesting_words => {
-                    docs = corpus["raw_corpus"];
-                    var root = prompt("Start by exploring a word. Here are some suggested words: " + interesting_words).toLowerCase();
-                    while (data[root] == null) {
-                        root = prompt("Sorry that word was not used. Try again with a different word or by typing the 'base' word (eg. ran => run). Here are some suggested words: " + interesting_words).toLowerCase();
-                    }
-
-                    var expandedNodes = new Set();
-                    expandedNodes.add(root);
-
-                    const getVisibleTree = () => {
-                        var openSet = [root];
-
-                        visibleNodes = new Set();
-                        visibleLinks = new Set();
-                        while (openSet.length > 0) {
-                            var current = openSet.pop();
-                            
-                            visibleNodes.add(current);
-                            data[current].forEach(neighborData => {
-                                neighbor = neighborData["word"];
-                                if (!visibleNodes.has(neighbor)) {
-                                    if (expandedNodes.has(neighbor)) {
-                                        openSet.push(neighbor);
-                                    } else {
-                                        visibleNodes.add(neighbor);
-                                    }
-                                }
-                                visibleLinks.add({source: current, target: neighbor});
-                                visibleLinks.add({source: neighbor, target: current});
-                            });
-                        }
-
-                        // Take intersection of closed set and expanded nodes ... to prune off some expanded nodes
-                        var newExpandedNodes = new Set();
-                        expandedNodes.forEach(elem => {
-                            if (visibleNodes.has(elem)) {
-                                newExpandedNodes.add(elem);
-                            }
-                        });
-                        expandedNodes = newExpandedNodes;
-                        return {nodes: Array.from(visibleNodes).map(function (elem) { return {id: elem, expanded: expandedNodes.has(elem)} }), links: Array.from(visibleLinks)};            
-                    }
-
-                    var hoveredNode = null;
-                    var hoveredLink = null;
-                    var graph = getVisibleTree();
-                    const elem = document.getElementById('graph');
-                    const Graph = ForceGraph()(elem)
-                        .graphData(graph)
-                        .nodeId('id')
-                        .nodeAutoColorBy('group')
-                        .onNodeHover(node => {
-                            if (node) {
-                                document.body.style.cursor = "pointer";
-                            } else {
-                                document.body.style.cursor = "default";
-                            }
-                            hoveredNode = node ? node : null;
-                        })
-                        .onLinkHover(link => {
-                            if (link) {
-                                document.body.style.cursor = "pointer";
-                            } else {
-                                document.body.style.cursor = "default";
-                            }
-                            hoveredLink = link ? link : null;
-                        })
-                        .linkWidth(link => (hoveredLink != null && link.source == hoveredLink.source && link.target == hoveredLink.target) ? 7 : 2)
-                        .nodeRelSize(8)
-                        .onNodeClick(node => {
-                            console.log(node.id + "");
-                            if (expandedNodes.has(node.id)) {
-                                expandedNodes.delete(node.id);
-                            } else {
-                                expandedNodes.add(node.id);
-                            }
-                            const newGraph = getVisibleTree();
-
-                            Graph.graphData(newGraph);
-                        })
-                        .onLinkClick(link => {
-                            const source = link.source.id;
-                            const target = link.target.id;
-                            data[source].forEach(neighborData => {
-                                if (neighborData["word"] == target) {
-                                    const doc_ids = neighborData["docs"];
-                                    const list_element = document.getElementById("doc_data");
-                                    list_element.innerHTML = "";
-                                    doc_ids.forEach(id => {
-                                        var li = document.createElement("li");
-                                        li.appendChild(document.createTextNode(docs[id]));
-                                        console.log(id)
-                                        list_element.appendChild(li);
-                                    });
-                                }
-                            });
-                        })
-                        .nodeCanvasObject((node, ctx, globalScale) => {
-                            const label = node.id;
-                            const fontSize = 16/globalScale;
-                            ctx.font = `${fontSize}px Sans-Serif`;
-                            const textWidth = ctx.measureText(label).width;
-                            const bckgDimensions = [textWidth, fontSize].map(n => n + fontSize * 0.2); // some padding
-
-                            ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
-                            // Make rectangle change colors when node is hovered over
-                            if (hoveredNode != null && hoveredNode.id == node.id) {
-                                ctx.fillStyle = "#bdd4e7cc";
-                            }
-                            ctx.fillRect(node.x - bckgDimensions[0] / 2, node.y - bckgDimensions[1] / 2, ...bckgDimensions);
-
-                            ctx.textAlign = 'center';
-                            ctx.textBaseline = 'middle';
-                            ctx.fillStyle = (node.expanded) ? "#235789" : "#020100";
-                            ctx.fillText(label, node.x, node.y);
-                        });
-                })
-            });            
-        });
-    </script>
-  </body>
+    <body>
+        <div id="graph"></div>
+        <div id="docs">
+            <div class="container">
+                <div class="row">
+                    <button type="button" class="btn btn-primary col-12" id="select_word_button" disabled>Loading data...</button>
+                </div>
+                <div class="row">
+                    <ul id="doc_data">
+                        <li>Click the button above to start exploring words in the dataset!</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+        <div id="veil"></div>
+        <div id="select_word" class="card">
+            <div class="card-body">
+                <h3 class="card-title text-center">Explore a Word</h3>
+                <div class="card-body">
+                    <div class="container">
+                        <div class="alert alert-danger" role="alert" style="display:none" id="select_word_error">Sorry, that word was not seen in the dataset. Try using one of the suggested words or try exploring another word. Note that words must be in their "base form" (convert plural nouns to their singular form or converting verbs to their present tense).</div>
+                        <div class="row">
+                            <h4>Here are some suggestions:</h4>
+                            <ul id="suggested_words" class="list-group">
+                                
+                            </ul>
+                        </div>
+                        <div class="row input-group">
+                            <input type="text" class="form-control" id="input_word">
+                            <button type="button" class="btn btn-primary" id="submit_word">Explore!</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </body>
+</html>
