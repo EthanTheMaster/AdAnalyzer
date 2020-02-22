@@ -217,6 +217,7 @@ $(document).ready(function() {
                     $("#suggested_words").append('<li class="list-group-item">'+ element +'</li>');
                 }
             }
+            $("#suggested_words").scrollTop(0);
         }
     });
     // Create click event listener as ads are not loaded until later

@@ -123,6 +123,7 @@ function renderGraph() {
                     });
                 }
             });
+            $("#docs").scrollTop(0);
         })
         .nodeCanvasObject((node, ctx, globalScale) => {
             const label = node.id;
