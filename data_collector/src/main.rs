@@ -207,7 +207,7 @@ async fn main() -> Result<(), String> {
             matches.value_of("path2").unwrap(),
             matches.value_of("target").unwrap()
         ).map_err(|_| "Failed to merge files")?;
-    } else if let Some(matches) = matches.subcommand_matches("launch") {
+    } else if let Some(_matches) = matches.subcommand_matches("launch") {
         launch_web_server().await?;
     }
 

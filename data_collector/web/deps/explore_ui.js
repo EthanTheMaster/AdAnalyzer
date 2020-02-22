@@ -1,7 +1,9 @@
 function hideModal() {
-    $("#veil").removeClass("darken_bg");
-    current_modal.css("display", "none");
-    current_modal = null;
+    if (current_modal != null) {
+        $("#veil").removeClass("darken_bg");
+        current_modal.css("display", "none");
+        current_modal = null;
+    }
 }
 
 function submitWord() {
@@ -58,7 +60,6 @@ function renderRegionChart(region) {
                 max = value;
             }
         })
-        console.log(Array.from(states.map((d) => d.properties.name)));
 
 
         if (us_choropleth != null) {
@@ -170,6 +171,35 @@ function renderDemographicChart(demographic) {
     
 }
 
+function populate_similar_docs_table(doc_id) {
+    fetchJsonData(`/explore/${ID}/similar_docs/${doc_id}/15`).then(res => {
+        // Clear previous data
+        $("#similar_docs_table").html("");
+        var seen_docs = new Set();
+        res.forEach((row, idx) => {
+            var row_html = `<th scope="row">${idx + 1}</th>`;
+
+            const tfidf_doc_id = row[0][0];
+            if (!seen_docs.has(tfidf_doc_id)) {
+                row_html += `<td class="ad_doc" id="doc_${tfidf_doc_id}">${GLOBAL_STATE.docs[tfidf_doc_id]}</td>`;
+                seen_docs.add(tfidf_doc_id);
+            }
+            const lsi_doc_id = row[1][0];
+            if (!seen_docs.has(lsi_doc_id)) {
+                row_html += `<td class="ad_doc" id="doc_${lsi_doc_id}">${GLOBAL_STATE.docs[lsi_doc_id]}</td>`;
+                seen_docs.add(lsi_doc_id);
+            }
+            const doc2vec_doc_id = row[2][0];
+            if (!seen_docs.has(doc2vec_doc_id)) {
+                row_html += `<td class="ad_doc" id="doc_${doc2vec_doc_id}">${GLOBAL_STATE.docs[doc2vec_doc_id]}</td>`;
+                seen_docs.add(doc2vec_doc_id);
+            }
+            const row_template = `<tr>${row_html}</tr>`;
+            $("#similar_docs_table").append(row_template);
+        });
+    });
+}
+
 current_modal = null;
 $(document).ready(function() {
     $("#select_word_button").click(function() {
@@ -193,21 +223,25 @@ $(document).ready(function() {
     $(document).on("click", ".ad_doc", function() {
         const doc_id = parseInt($(this).attr('id').split("_")[1]);
         // Convert doc_id to doc text and use that to lookup the stats
-        const doc_stats = GLOBAL_STATE.ad_stats[GLOBAL_STATE.docs[doc_id]];
+        const doc_text = GLOBAL_STATE.docs[doc_id];
+        const doc_stats = GLOBAL_STATE.ad_stats[doc_text];
         const demographic = doc_stats["demographic_impression"];
         const region = doc_stats["region_impression"];
-        console.log(doc_stats);
         // Popup modal
         if (current_modal != null) {
             // Dismiss whatever modal is currently opened
             hideModal();
         }
         $("#veil").addClass("darken_bg");
-        current_modal = $("#stats_modal")
+        current_modal = $("#stats_modal");
         $("#stats_modal").css("display", "block");
 
+        $("#doc_text").text(doc_text);
         renderDemographicChart(demographic);
         renderRegionChart(region);
+        populate_similar_docs_table(doc_id);
+
+        $("#stats_modal").scrollTop(0);
     });
 
     $("#veil").click(hideModal);

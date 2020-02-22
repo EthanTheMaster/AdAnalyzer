@@ -51,10 +51,11 @@ pub async fn launch_web_server() -> Result<(), String> {
             .route("/explore/{id}/corpus", web::get().to(api::get_corpus))
             .route("/explore/{id}/stats", web::get().to(api::get_stats))
             .route("/explore/{id}/interesting_words/{num_best}", web::get().to(api::get_interesting_words))
+            .route("/explore/{id}/similar_docs/{doc_id}/{num_best}", web::get().to(api::get_similar_docs))
     })
     .bind("127.0.0.1:8080").map_err(|_| "Failed to bind")?
     .run()
-    .await;
+    .await.map_err(|_| "Failed to launch server")?;
 
     Ok(())
 }

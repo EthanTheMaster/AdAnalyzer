@@ -12,7 +12,7 @@
         <link rel="stylesheet" href="/deps/explore_style.css"></style>
         <script src="/deps/force-graph.min.js"></script>
         <!-- Set id so script knows where to find model data -->
-        <script>const ID = "warren"</script>
+        <script>const ID = "{{ id }}"</script>
         <script src="/deps/graph_ui.js"></script>
         <script src="/deps/explore_ui.js"></script>
         <title>Graph Explorer</title>
@@ -59,16 +59,40 @@
                 <div class="card-body">
                     <div class="container">
                         <div class="row">
-                            <h5>Demographic Data</h5>
+                            <h5 class="mx-auto font-weight-bold">Text</h5>
+                        </div>
+                        <div class="row">
+                            <p class="font-italic" id="doc_text"></p>
+                        </div>
+                        <div class="row">
+                            <h5 class="mx-auto font-weight-bold">Demographic Impression Data</h5>
                         </div>
                         <div class="row chart">
                             <canvas id="demographic_chart"></canvas>
                         </div>
-                        <div class="row text-center center-block">
-                            <h5>Region Data</h5>
+                        <div class="row">
+                            <h5 class="mx-auto font-weight-bold">Region Impression Data</h5>
                         </div>
                         <div class="row chart">
                             <canvas id="us_choropleth"></canvas>
+                        </div>
+                        <div class="row">
+                            <h5 class="mx-auto font-weight-bold">Similar Ads</h5>
+                        </div>
+                        <div class="row">
+                            <table class="table">
+                                <thead>
+                                    <tr>
+                                        <th scope="col">Rank</th>
+                                        <th scope="col">TFIDF</th>
+                                        <th scope="col">LSI</th>
+                                        <th scope="col">DOC2VEC</th>
+                                    </tr>
+                                </thead>    
+                                <tbody id="similar_docs_table">
+
+                                </tbody>
+                            </table>
                         </div>
                     </div>
                 </div>
