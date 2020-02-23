@@ -195,6 +195,11 @@ async fn main() -> Result<(), String> {
                         )
                         .subcommand(SubCommand::with_name("launch")
                             .about("Launches web server to explore data")
+                            .arg(Arg::with_name("address")
+                                .required(true)
+                                .takes_value(true)
+                                .help("Address(IP:PORT) to bind web server")
+                            )
                         )
         .get_matches();
 
@@ -207,8 +212,8 @@ async fn main() -> Result<(), String> {
             matches.value_of("path2").unwrap(),
             matches.value_of("target").unwrap()
         ).map_err(|_| "Failed to merge files")?;
-    } else if let Some(_matches) = matches.subcommand_matches("launch") {
-        launch_web_server().await?;
+    } else if let Some(matches) = matches.subcommand_matches("launch") {
+        launch_web_server(matches.value_of("address").unwrap()).await?;
     }
 
     return Ok(());

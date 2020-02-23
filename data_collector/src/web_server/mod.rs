@@ -40,7 +40,7 @@ async fn explore(id: web::Path<String>) -> impl Responder {
     HttpResponse::Ok().content_type("text/html").body(render_html)
 }
 
-pub async fn launch_web_server() -> Result<(), String> {
+pub async fn launch_web_server(address: &str) -> Result<(), String> {
     HttpServer::new(|| {
         App::new()
             .route("/", web::get().to(index))
@@ -53,7 +53,7 @@ pub async fn launch_web_server() -> Result<(), String> {
             .route("/explore/{id}/interesting_words/{num_best}", web::get().to(api::get_interesting_words))
             .route("/explore/{id}/similar_docs/{doc_id}/{num_best}", web::get().to(api::get_similar_docs))
     })
-    .bind("127.0.0.1:8080").map_err(|_| "Failed to bind")?
+    .bind(address).map_err(|_| "Failed to bind")?
     .run()
     .await.map_err(|_| "Failed to launch server")?;
 
