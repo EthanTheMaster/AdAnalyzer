@@ -22,15 +22,26 @@ DOC2VEC_EPOCHS=500
 DOC2VEC_WORKERS=8
 
 # Run ad collector
+echo "##########################################################"
+echo "Running Ad Collector"
+echo "##########################################################"
 cd data_collector/
 SAVE_PATH="./web/data/${MODEL_NAME}"
 cargo run --release collect --save_path=$SAVE_PATH --access_token=$ACCESS_TOKEN --ad_status=$AD_STATUS --page_ids=$PAGE_IDS --batch_size=$BATCH_SIZE --retries=$RETRIES --year_start=$YEAR_START --month_start=$MONTH_START --day_start=$DAY_START --year_end=$YEAR_END --month_end=$MONTH_END --day_end=$DAY_END
 
 # Run analysis scripts on the ad data
 NLP_MODEL_PATH="${SAVE_PATH}/models" 
+echo "##########################################################"
+echo "Running Preprocess Script"
+echo "##########################################################"
 python3 ../scripts/preprocess.py "${SAVE_PATH}/ad_data.json" $NLP_MODEL_PATH --num_topics=$NUM_TOPICS --doc2vec_epochs=$DOC2VEC_EPOCHS --doc2vec_workers=$DOC2VEC_WORKERS
+echo "##########################################################"
+echo "Running Word Association Script"
+echo "##########################################################"
 python3 ../scripts/associate_words.py "${NLP_MODEL_PATH}/corpus_data.json" $SAVE_PATH
 
 # Launch web server
+echo "##########################################################"
 echo "Explore data at: ${IP_ADDRESS}/explore/${MODEL_NAME}"
+echo "##########################################################"
 cargo run --release launch $IP_ADDRESS
