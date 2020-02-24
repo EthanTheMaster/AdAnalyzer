@@ -9,8 +9,6 @@ use crate::web_server::return_file;
 
 // Constants that point to python analysis scripts
 const SCRIPTS_FOLDER: &str = "../scripts/";
-const PREPROCESS_SCRIPT: &str = "preprocess.py";
-const ASSOCIATE_SCRIPT: &str = "associate_words.py";
 const SIMILARITY_SCRIPT: &str = "similarity.py";
 
 fn get_models_dir(id: &String) -> PathBuf {

@@ -1,4 +1,4 @@
-use actix_web::{web, App, HttpResponse, HttpServer, Responder, HttpRequest};
+use actix_web::{web, middleware, App, HttpResponse, HttpServer, Responder, HttpRequest};
 use actix_files::NamedFile;
 
 use askama::Template;
@@ -18,7 +18,7 @@ pub fn return_file(req: &HttpRequest, path: String) -> impl Responder {
 }
 
 async fn index() -> impl Responder {
-    HttpResponse::Ok().body("index page goes here...")
+    HttpResponse::Ok().body("")
 }
 
 // Wrapper on return_file to get dependency
@@ -43,6 +43,7 @@ async fn explore(id: web::Path<String>) -> impl Responder {
 pub async fn launch_web_server(address: &str) -> Result<(), String> {
     HttpServer::new(|| {
         App::new()
+            .wrap(middleware::Compress::default())
             .route("/", web::get().to(index))
             .route("/deps/{file_name}", web::get().to(retrieve_dependencies))
 
