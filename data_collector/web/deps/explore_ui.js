@@ -15,6 +15,14 @@ function updateImpressionExplorer() {
         $("#impression_explorer").css("display", "block");
         $("#graph").css("display", "none");
         $("#alternate_explore").text("Go Back To Graph View.");
+
+        const instructions = String.raw`
+        <li>The ad impressions statistics are broken up by demographic and region.</li>
+        <li>Ad impressions are estimated, and a lower and upper bound is given for the demographics breakdown.</li>
+        <li>Click on a bar/region to view the most seen ads for the demographic/region.</li>
+        `;
+    
+        $("#doc_data").html(instructions);
     } else {
         // Display association graph and hide impressions explorer
         $("#impression_explorer").css("display", "none");

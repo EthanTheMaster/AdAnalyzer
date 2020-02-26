@@ -213,6 +213,18 @@ function renderAggregateRegionChart() {
             },
             onClick: (evt, elems) => {
                 const label = elems.map((elem) => elem.feature.properties.name)[0];
+                // Sort the documents by impressions in the region then display
+                GLOBAL_STATE.region_filter[label].documents.sort((doc1_data, doc2_data) => {
+                    // Sort in DESCENDING ORDER ... higher values return -1 "less than"
+                    if (doc1_data.estimated_impressions > doc2_data.estimated_impressions) {
+                        return -1;
+                    }
+                    if (doc1_data.estimated_impressions < doc2_data.estimated_impressions) {
+                        return 1;
+                    } else {
+                        return 0;
+                    }
+                });
                 const doc_ids = GLOBAL_STATE.region_filter[label].documents.map((o) => o.doc_id);
                 displayDocuments(doc_ids);
             }
@@ -282,6 +294,19 @@ function renderAggregateDemographicChart() {
             onClick: ((e, item) => {
                 const label_idx = item[0]._index;
                 const label = demographic_labels[label_idx];
+                // Sort the documents by impressions in the region then display
+                GLOBAL_STATE.demographic_filter[label].documents.sort((doc1_data, doc2_data) => {
+                    // Sort in DESCENDING ORDER ... higher values return -1 "less than"
+                    if (doc1_data.estimated_impressions > doc2_data.estimated_impressions) {
+                        return -1;
+                    }
+                    if (doc1_data.estimated_impressions < doc2_data.estimated_impressions) {
+                        return 1;
+                    } else {
+                        return 0;
+                    }
+                });
+                
                 const doc_ids = GLOBAL_STATE.demographic_filter[label].documents.map((o) => o.doc_id);
                 displayDocuments(doc_ids);
             })
@@ -319,20 +344,6 @@ function groupDocuments() {
                 estimated_impressions: (demographic[group][0] + demographic[group][1]) / 2.0
             });
         });
-        // Sort documents in each demographic group
-        Object.keys(GLOBAL_STATE.demographic_filter).forEach(group => {
-            GLOBAL_STATE.demographic_filter[group].documents.sort((doc1_data, doc2_data) => {
-                // Sort in DESCENDING ORDER ... higher values return -1 "less than"
-                if (doc1_data.estimated_impressions > doc2_data.estimated_impressions) {
-                    return -1;
-                }
-                if (doc1_data.estimated_impressions < doc2_data.estimated_impressions) {
-                    return 1;
-                } else {
-                    return 0;
-                }
-            });
-        });
         // Group documents into different region locations
         Object.keys(region).forEach(location => {
             if (GLOBAL_STATE.region_filter[location] == null) {
@@ -347,20 +358,6 @@ function groupDocuments() {
             GLOBAL_STATE.region_filter[location].documents.push({
                 doc_id: doc_id,
                 estimated_impressions: estimated_impressions
-            });
-        });
-        // Sort documents in each region group
-        Object.keys(GLOBAL_STATE.region_filter).forEach(location => {
-            GLOBAL_STATE.region_filter[location].documents.sort((doc1_data, doc2_data) => {
-                // Sort in DESCENDING ORDER ... higher values return -1 "less than"
-                if (doc1_data.estimated_impressions > doc2_data.estimated_impressions) {
-                    return -1;
-                }
-                if (doc1_data.estimated_impressions < doc2_data.estimated_impressions) {
-                    return 1;
-                } else {
-                    return 0;
-                }
             });
         });
     });
