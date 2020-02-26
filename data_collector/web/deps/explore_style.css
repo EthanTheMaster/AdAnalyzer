@@ -6,8 +6,18 @@ body {
     float: left;
     width: 75%;
     height:100%;
-    position: fixed;
+    position: absolute;
     z-index: -1;
+}
+#impression_explorer {
+    float: left;
+    right: 0;
+    width: 75%;
+    height:100%;
+    position: absolute;
+    overflow-y: scroll;
+    z-index: -1;
+    display: none;
 }
 #docs {
     position: fixed;

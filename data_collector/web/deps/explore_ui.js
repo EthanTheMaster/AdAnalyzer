@@ -1,8 +1,25 @@
+var current_modal = null;
+var exploring_word = true;
+
 function hideModal() {
     if (current_modal != null) {
         $("#veil").removeClass("darken_bg");
         current_modal.css("display", "none");
         current_modal = null;
+    }
+}
+
+function updateImpressionExplorer() {
+    if (!exploring_word) {
+        // Display impressions explorer and hide association graph
+        $("#impression_explorer").css("display", "block");
+        $("#graph").css("display", "none");
+        $("#alternate_explore").text("Go Back To Graph View.");
+    } else {
+        // Display association graph and hide impressions explorer
+        $("#impression_explorer").css("display", "none");
+        $("#graph").css("display", "block");
+        $("#alternate_explore").text("Explore by Demographic/Region!");
     }
 }
 
@@ -31,6 +48,10 @@ function submitWord() {
         `;
     
         $("#doc_data").html(instructions);
+
+        // Once the user submits an explored word ... remove impression explorer
+        exploring_word = true;
+        updateImpressionExplorer();
     }
 }
 
@@ -38,68 +59,67 @@ var us_choropleth = null;
 function renderRegionChart(region) {
     var region_ctx = document.getElementById("us_choropleth").getContext("2d");
 
-    fetchJsonData('https://unpkg.com/us-atlas/states-10m.json').then((us) => {
-        const nation = ChartGeo.topojson.feature(us, us.objects.nation).features[0];
-        const states = ChartGeo.topojson.feature(us, us.objects.states).features;
-        
-        const region_labels = Object.keys(region).map(label => {
-            const lower = region[label][0];
-            const upper = region[label][1];
-            return `${label} (Impressions: ${lower.toFixed()} - ${upper.toFixed()})`;
-        });
-        const region_data = Array.from(Object.keys(region).map(label => {
-            return {
-                feature: states.find((d) => d.properties.name === label),
-                value: (region[label][0] + region[label][1]) / 2.0
-            };
-        }));
-        var max = 1;
-        Object.keys(region).forEach(label => {
-            value = (region[label][0] + region[label][1]) / 2.0;
-            if (value > max) {
-                max = value;
-            }
-        })
-
-
-        if (us_choropleth != null) {
-            // Destroy previous chart
-            us_choropleth.destroy();
-        }
-        us_choropleth = new Chart(region_ctx, {
-            type: 'choropleth',
-            data: {
-                labels: region_labels,
-                datasets: [{
-                    outline: nation,
-                    data: region_data,
-                    backgroundColor: (context) => {
-                        if (context.dataIndex == null) {
-                            return null;
-                        }
-                        const value = context.dataset.data[context.dataIndex];
-                        const percent = value.value/max;
-                        const color = new Color().rgb(255 - percent*255, 255 - percent*255, 255 - percent*255);                       
-                        return color.rgbString();
-                    },
-                    borderWidth: 1,
-                }],
-            },
-            options: {
-                legend:{
-                    display:false
-                },
-                scale: {
-                    projection: 'albersUsa'
-                }
-            }
-        });
-        // Get canvas to fill container div
-        $("#us_choropleth").css("width", '100%');
-        $("#us_choropleth").css("height", '100%');
-        $("#us_choropleth").width  = $("#demographic_chart").offsetWidth;
-        $("#us_choropleth").height = $("#demographic_chart").offsetHeight;
+    const us = GLOBAL_STATE.us_geo_data;
+    const nation = ChartGeo.topojson.feature(us, us.objects.nation).features[0];
+    const states = ChartGeo.topojson.feature(us, us.objects.states).features;
+    
+    const region_labels = Object.keys(region).map(label => {
+        const lower = region[label][0];
+        const upper = region[label][1];
+        return `${label} (Impressions: ${lower.toFixed()} - ${upper.toFixed()})`;
     });
+    const region_data = Array.from(Object.keys(region).map(label => {
+        return {
+            feature: states.find((d) => d.properties.name === label),
+            value: (region[label][0] + region[label][1]) / 2.0
+        };
+    }));
+    var max = 1;
+    Object.keys(region).forEach(label => {
+        value = (region[label][0] + region[label][1]) / 2.0;
+        if (value > max) {
+            max = value;
+        }
+    })
+
+
+    if (us_choropleth != null) {
+        // Destroy previous chart
+        us_choropleth.destroy();
+    }
+    us_choropleth = new Chart(region_ctx, {
+        type: 'choropleth',
+        data: {
+            labels: region_labels,
+            datasets: [{
+                outline: nation,
+                data: region_data,
+                backgroundColor: (context) => {
+                    if (context.dataIndex == null) {
+                        return null;
+                    }
+                    const value = context.dataset.data[context.dataIndex];
+                    const percent = value.value/max;
+                    const color = new Color().rgb(255 - percent*255, 255 - percent*255, 255 - percent*255);                       
+                    return color.rgbString();
+                },
+                borderWidth: 1,
+            }],
+        },
+        options: {
+            legend:{
+                display:false
+            },
+            scale: {
+                projection: 'albersUsa'
+            }
+        }
+    });
+    // Get canvas to fill container div
+    $("#us_choropleth").css("width", '100%');
+    $("#us_choropleth").css("height", '100%');
+    $("#us_choropleth").width  = $("#us_choropleth").offsetWidth;
+    $("#us_choropleth").height = $("#us_choropleth").offsetHeight;
 }
 
 
@@ -200,7 +220,6 @@ function populate_similar_docs_table(doc_id) {
     });
 }
 
-current_modal = null;
 $(document).ready(function() {
     $("#select_word_button").click(function() {
         // Don't load modal if all data hasn't been collected
@@ -251,5 +270,9 @@ $(document).ready(function() {
         if(e.which == 13) {
             submitWord();
         }
+    });
+    $("#alternate_explore").click(function() {
+        exploring_word = !exploring_word;
+        updateImpressionExplorer();
     });
 });

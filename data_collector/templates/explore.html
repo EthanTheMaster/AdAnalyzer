@@ -12,7 +12,7 @@
         <link rel="stylesheet" href="/deps/explore_style.css"></style>
         <script src="/deps/force-graph.min.js"></script>
         <!-- Set id so script knows where to find model data -->
-        <script>const ID = "{{ id }}"</script>
+        <script>const ID = "{{ id }}";</script>
         <script src="/deps/graph_ui.js"></script>
         <script src="/deps/explore_ui.js"></script>
         <title>Graph Explorer</title>
@@ -20,10 +20,25 @@
 
     <body>
         <div id="graph"></div>
+        <div id="impression_explorer" class="container">
+            <div class="row">
+                <h5 class="mx-auto font-weight-bold">Demographic Impression Data</h5>
+            </div>
+            <div class="row chart">
+                <canvas id="demographic_explorer_chart"></canvas>
+            </div>
+            <div class="row">
+                <h5 class="mx-auto font-weight-bold">Region Impression Data</h5>
+            </div>
+            <div class="row chart">
+                <canvas id="region_explorer_chart"></canvas>
+            </div>
+        </div>
         <div id="docs">
             <div class="container">
                 <div class="row">
-                    <button type="button" class="btn btn-primary col-12" id="select_word_button" disabled>Loading data...</button>
+                    <button type="button" class="btn btn-primary col-6" id="select_word_button" disabled>Loading data...</button>
+                    <button type="button" class="btn btn-secondary col-6" id="alternate_explore" disabled>Loading data...</button>
                 </div>
                 <div class="row">
                     <ul id="doc_data">
