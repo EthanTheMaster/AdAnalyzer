@@ -116,7 +116,7 @@ if __name__ == "__main__":
 
     parser_similar_docs = subparsers.add_parser("similar_docs", help="Finds similar documents in the corpus")
     parser_similar_docs.add_argument("MODEL_PATH", help="Directory holding NLP models generated after preprocessing", nargs=1)
-    parser_similar_docs.add_argument("DOC_ID", help="The number of words that should be returned", nargs=1, type=int)
+    parser_similar_docs.add_argument("DOC_ID", help="The id of the document that other documents will be compared to for similarity.", nargs=1, type=int)
     parser_similar_docs.add_argument("--num_best", help="The number of documents from each model that should be returned", type=int, default=15)
 
     args = parser.parse_args()

@@ -18,8 +18,8 @@ BATCH_SIZE=500
 AD_STATUS="ALL"
 ################# NLP Model Parameters #################
 NUM_TOPICS=20
-DOC2VEC_EPOCHS=500
-DOC2VEC_WORKERS=8
+DOC2VEC_EPOCHS=250
+DOC2VEC_WORKERS=2
 
 # Run ad collector
 echo "##########################################################"

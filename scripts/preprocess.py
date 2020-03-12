@@ -37,7 +37,7 @@ if __name__ == "__main__":
     parser.add_argument("MODEL_DIR", help="Directory where NLP models will be stored", nargs=1)
     parser.add_argument("--num_topics", help="Number of topics that the LSI model should look for", default=15, type=int)
     parser.add_argument("--doc2vec_epochs", help="Number of epochs to train doc2vec model", default=40, type=int)
-    parser.add_argument("--doc2vec_workers", help="Number of epochs to train doc2vec model", default=1, type=int)
+    parser.add_argument("--doc2vec_workers", help="Number of worker threads used to train doc2vec model", default=1, type=int)
     args = parser.parse_args()
 
     DATASET_LOCATION = args.DATA_PATH[0]
