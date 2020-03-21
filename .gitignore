@@ -1,7 +1,7 @@
-data_collector/Cargo.lock
 data_collector/target
 data_collector/**/*.rs.bk
 data_collector/.idea
 data_collector/AdCollector.iml
 data/
 scripts/__pycache__/
+.idea/
