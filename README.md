@@ -124,6 +124,8 @@ If you don't care to do all the above steps (understandable), you can simply use
 
 If you want to simply try out the web interface and not go through the trouble of obtaining data, there is a tar ball in `data_collector/web/` that when extracted will generate a `data` folder holding ad data from multiple candidates. Once you have extracted that files, launch the web server (see above) and navigate to `127.0.0.1:8080/explore/CANDIDATE_NAME`. The data was collected by grabbing all ads published from `2019/1/1 - 2020/2/23`.
 
+If you find getting access to Facebook's API too difficult, I have collected some ads which can be found in the `2020Archives` folder. There you will find the `ad_data.json` files generated during the ad collection process which can't be done without access to the API. Note that the archives do _NOT_ have precomputed NLP models, and you will need to follow the above instructions if you want to do the analysis offered by this program. Also, if you want to combine multiple months of data together, refer to the `merge` subcommand in the `data_collector` binary.
+
 # Extra information
 ## Getting access to the Facebook Ad Library API
 Go to https://www.facebook.com/ads/library/api and follow the steps outlined. Note that in order to gain access to the API you _must_ have a Facebook account AND be authorized to run election ads. It is not enough to have a Facebook account. Once you have gained access, you should see a screen like the one below. 
