@@ -128,7 +128,9 @@ impl Collector {
                         println!("From {} to {}", &api_response.data[0].ad_delivery_start_time, &api_response.data.last().unwrap().ad_delivery_start_time);
                     }
                     for ad in api_response.data.iter() {
-                        let ad_start: DateTime<Utc> = DateTime::from(DateTime::parse_from_str(ad.ad_delivery_start_time.as_str(), "%Y-%m-%dT%H:%M:%S%z").unwrap());
+                        // let ad_start: DateTime<Utc> = DateTime::from(DateTime::parse_from_str(ad.ad_delivery_start_time.as_str(), "%Y-%m-%dT%H:%M:%S%z").unwrap());
+                        // Facebook changed api format ... normalize date to midnight UTC time
+                        let ad_start: DateTime<Utc> = DateTime::from(DateTime::parse_from_str(&*(ad.ad_delivery_start_time.as_str().to_owned() + "T00:00:00+0000"), "%Y-%m-%dT%H:%M:%S%z").unwrap());
                         // Consider only ads that started within specified time frame
                         if ad_start < self.start_date_time {
                             return Ok(res);
